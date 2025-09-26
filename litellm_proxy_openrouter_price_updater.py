@@ -193,7 +193,7 @@ def check_model_pricing(
 
         # Strip "openrouter/" prefix to match API model IDs
         api_model_id = model_id.replace("openrouter/", "", 1)
-        
+
         # Strip modifiers after ':' as they don't impact pricing
         if ":" in api_model_id:
             api_model_id = api_model_id.split(":")[0]
