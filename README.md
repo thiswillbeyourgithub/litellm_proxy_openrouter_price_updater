@@ -15,6 +15,8 @@ A CLI tool that compares local OpenRouter model pricing in LiteLLM proxy configu
   - Output cost per token (completion pricing)  
   - Cache creation input token cost
   - Cache read input token cost
+  - Input cost per image
+  - Output cost per reasoning token
 - Detailed logging with color-coded output
 - Exit codes for CI/CD integration
 
@@ -46,9 +48,19 @@ python litellm_proxy_openrouter_price_updater.py --config path/to/your/litellm_c
 2024-01-15 10:30:12.456 | INFO     | Found 5 OpenRouter models in config
 2024-01-15 10:30:12.567 | INFO     | Checking model: GPT-4 Turbo (openrouter/openai/gpt-4-turbo)
 2024-01-15 10:30:12.678 | SUCCESS  | Pricing is up to date for GPT-4 Turbo
-2024-01-15 10:30:12.789 | WARNING  | Pricing issues for Claude 3:
-2024-01-15 10:30:12.890 |          |   - Missing cache_read_input_token_cost: should be 0.000001
+2024-01-15 10:30:12.789 | WARNING  | Pricing discrepancies for Claude 3:
+2024-01-15 10:30:12.890 |          |   - Missing cache_read_input_token_cost: API has input_cache_read=0.000001
 2024-01-15 10:30:12.991 |          |   - output_cost_per_token mismatch: local=0.000015, API=0.000016
+2024-01-15 10:30:13.100 | INFO     | Pricing warnings for Mixtral:
+2024-01-15 10:30:13.200 |          |   - API has pricing for 'web_search' (0.003) - not tracked by LiteLLM
+2024-01-15 10:30:13.300 | INFO     | ============================================================
+2024-01-15 10:30:13.400 | INFO     | PRICING CHECK RECAP
+2024-01-15 10:30:13.500 | INFO     | ============================================================
+2024-01-15 10:30:13.600 | INFO     | Total models checked: 5
+2024-01-15 10:30:13.700 | INFO     | Models with pricing issues: 1
+2024-01-15 10:30:13.800 | INFO     | Models with warnings: 1
+2024-01-15 10:30:13.900 | INFO     | Total pricing issues: 2
+2024-01-15 10:31:14.000 | INFO     | Total warnings: 1
 ```
 
 ### Configuration File Format
@@ -64,14 +76,16 @@ model_list:
       output_cost_per_token: 0.00003
       cache_creation_input_token_cost: 0.0000125
       cache_read_input_token_cost: 0.0000025
+      input_cost_per_image: 0.001445
+      output_cost_per_reasoning_token: 0.00006
 ```
 
 ### Exit Codes
 
-- `0`: All pricing is up to date
+- `0`: All pricing is up to date (warnings are allowed)
 - `1`: Pricing discrepancies found or error occurred
 
-This makes the tool suitable for use in CI/CD pipelines to catch pricing configuration drift.
+This makes the tool suitable for use in CI/CD pipelines to catch pricing configuration drift. Note that informational warnings (like unsupported API pricing fields) do not cause a non-zero exit code.
 
 ## Development
 
@@ -97,6 +111,21 @@ The tool handles various error conditions gracefully:
 - **Invalid YAML**: Detailed parsing error information  
 - **API failures**: Network timeout and HTTP error handling
 - **Missing models**: Warning when local models aren't found in API
+- **Model modifiers**: Automatically strips modifiers (e.g., `:nitro`) from model IDs when comparing with API
+- **Unsupported pricing fields**: Some API pricing fields (like `web_search`) generate informational warnings rather than errors
+
+## Output Types
+
+The tool distinguishes between two types of issues:
+
+- **Discrepancies**: Missing or mismatched pricing that should be fixed (causes exit code 1)
+- **Warnings**: Informational messages about API pricing fields not tracked by LiteLLM (exit code 0)
+
+At the end of each run, a detailed recap summary shows:
+- Total models checked
+- Models with pricing issues vs warnings
+- Counts of total issues and warnings
+- Lists of affected models
 
 ## Pricing Fields Supported
 
@@ -106,6 +135,16 @@ The tool handles various error conditions gracefully:
 | `output_cost_per_token` | `completion` | Cost per output token |
 | `cache_creation_input_token_cost` | `input_cache_write` | Cost to write to cache |
 | `cache_read_input_token_cost` | `input_cache_read` | Cost to read from cache |
+| `input_cost_per_image` | `image` | Cost per input image |
+| `output_cost_per_reasoning_token` | `internal_reasoning` | Cost per reasoning token |
+
+### Informational Fields
+
+Some OpenRouter API pricing fields generate warnings but don't require configuration updates:
+
+| OpenRouter API Field | Status | Description |
+|---------------------|--------|-------------|
+| `web_search` | Warning only | Web search cost - not tracked by LiteLLM |
 
 ## License
 
