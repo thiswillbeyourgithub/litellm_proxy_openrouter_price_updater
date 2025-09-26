@@ -163,6 +163,23 @@ def compare_pricing(
                         f"{local_key} mismatch: local={local_value}, API={api_value}"
                     )
 
+    # Create reverse mapping to check for unmapped API keys
+    api_to_local_mappings = {v: k for k, v in price_mappings.items()}
+
+    # Check for API pricing keys that have non-zero values but are missing from config
+    for api_key, api_value in api_pricing.items():
+        if api_value and float(api_value) > 0:
+            if api_key not in api_to_local_mappings:
+                discrepancies.append(
+                    f"Unmapped API pricing key '{api_key}' with value {api_value}"
+                )
+            else:
+                local_key = api_to_local_mappings[api_key]
+                if litellm_params.get(local_key) is None:
+                    discrepancies.append(
+                        f"Missing {local_key}: API has {api_key}={api_value}"
+                    )
+
     return discrepancies
 
 
