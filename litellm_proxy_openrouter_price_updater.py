@@ -212,6 +212,9 @@ def check_model_pricing(
         return
 
     total_issues = 0
+    total_warnings = 0
+    models_with_issues = []
+    models_with_warnings = []
 
     for model in openrouter_models:
         model_name = model.get("model_name", "Unknown")
@@ -230,6 +233,7 @@ def check_model_pricing(
         if api_model_id not in api_models:
             logger.warning(f"Model {api_model_id} not found in OpenRouter API")
             total_issues += 1
+            models_with_issues.append(model_name)
             continue
 
         api_model = api_models[api_model_id]
@@ -241,16 +245,39 @@ def check_model_pricing(
             for discrepancy in discrepancies:
                 logger.warning(f"  - {discrepancy}")
             total_issues += len(discrepancies)
+            models_with_issues.append(model_name)
             has_issues = True
 
         if warnings:
             logger.info(f"Pricing warnings for {model_name}:")
             for warning in warnings:
                 logger.info(f"  - {warning}")
+            total_warnings += len(warnings)
+            models_with_warnings.append(model_name)
             has_issues = True
 
         if not has_issues:
             logger.success(f"Pricing is up to date for {model_name}")
+
+    # Print recap summary
+    logger.info("=" * 60)
+    logger.info("PRICING CHECK RECAP")
+    logger.info("=" * 60)
+    logger.info(f"Total models checked: {len(openrouter_models)}")
+    logger.info(f"Models with pricing issues: {len(set(models_with_issues))}")
+    logger.info(f"Models with warnings: {len(set(models_with_warnings))}")
+    logger.info(f"Total pricing issues: {total_issues}")
+    logger.info(f"Total warnings: {total_warnings}")
+
+    if models_with_issues:
+        logger.warning("Models requiring pricing fixes:")
+        for model_name in set(models_with_issues):
+            logger.warning(f"  - {model_name}")
+
+    if models_with_warnings:
+        logger.info("Models with informational warnings:")
+        for model_name in set(models_with_warnings):
+            logger.info(f"  - {model_name}")
 
     if total_issues > 0:
         logger.error(f"Found {total_issues} pricing issues total")
