@@ -138,6 +138,7 @@ def compare_pricing(
         "output_cost_per_token": "completion",
         "cache_creation_input_token_cost": "input_cache_write",
         "cache_read_input_token_cost": "input_cache_read",
+        "input_cost_per_image": "image",
     }
 
     for local_key, api_key in price_mappings.items():
