@@ -140,6 +140,7 @@ def compare_pricing(
         "cache_creation_input_token_cost": "input_cache_write",
         "cache_read_input_token_cost": "input_cache_read",
         "input_cost_per_image": "image",
+        "output_cost_per_reasoning_token": "internal_reasoning",
     }
 
     for local_key, api_key in price_mappings.items():
@@ -169,7 +170,7 @@ def compare_pricing(
 
     # Define pricing keys that generate warnings instead of discrepancies
     # These are not tracked by LiteLLM as of September 2025
-    warning_keys = {"web_search", "internal_reasoning"}
+    warning_keys = {"web_search"}
 
     # Check for API pricing keys that have non-zero values but are missing from config
     for api_key, api_value in api_pricing.items():
