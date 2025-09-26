@@ -11,7 +11,7 @@ Generated with assistance from aider.chat
 
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 import requests
 import yaml
 import click
@@ -112,7 +112,7 @@ def extract_openrouter_models(config: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 def compare_pricing(
     local_model: Dict[str, Any], api_model: Dict[str, Any]
-) -> List[str]:
+) -> Tuple[List[str], List[str]]:
     """
     Compare local model pricing with API pricing.
 
@@ -125,10 +125,11 @@ def compare_pricing(
 
     Returns
     -------
-    List[str]
-        List of pricing discrepancies found
+    Tuple[List[str], List[str]]
+        Tuple of (discrepancies, warnings) found
     """
     discrepancies = []
+    warnings = []
     litellm_params = local_model.get("litellm_params", {})
     api_pricing = api_model.get("pricing", {})
 
@@ -166,10 +167,18 @@ def compare_pricing(
     # Create reverse mapping to check for unmapped API keys
     api_to_local_mappings = {v: k for k, v in price_mappings.items()}
 
+    # Define pricing keys that generate warnings instead of discrepancies
+    # These are not tracked by LiteLLM as of September 2025
+    warning_keys = {"web_search", "internal_reasoning"}
+
     # Check for API pricing keys that have non-zero values but are missing from config
     for api_key, api_value in api_pricing.items():
         if api_value and float(api_value) > 0:
-            if api_key not in api_to_local_mappings:
+            if api_key in warning_keys:
+                warnings.append(
+                    f"API has pricing for '{api_key}' ({api_value}) - not tracked by LiteLLM"
+                )
+            elif api_key not in api_to_local_mappings:
                 discrepancies.append(
                     f"Unmapped API pricing key '{api_key}' with value {api_value}"
                 )
@@ -180,7 +189,7 @@ def compare_pricing(
                         f"Missing {local_key}: API has {api_key}={api_value}"
                     )
 
-    return discrepancies
+    return discrepancies, warnings
 
 
 def check_model_pricing(
@@ -224,14 +233,23 @@ def check_model_pricing(
             continue
 
         api_model = api_models[api_model_id]
-        discrepancies = compare_pricing(model, api_model)
+        discrepancies, warnings = compare_pricing(model, api_model)
 
+        has_issues = False
         if discrepancies:
-            logger.warning(f"Pricing issues for {model_name}:")
+            logger.warning(f"Pricing discrepancies for {model_name}:")
             for discrepancy in discrepancies:
                 logger.warning(f"  - {discrepancy}")
             total_issues += len(discrepancies)
-        else:
+            has_issues = True
+
+        if warnings:
+            logger.info(f"Pricing warnings for {model_name}:")
+            for warning in warnings:
+                logger.info(f"  - {warning}")
+            has_issues = True
+
+        if not has_issues:
             logger.success(f"Pricing is up to date for {model_name}")
 
     if total_issues > 0:
