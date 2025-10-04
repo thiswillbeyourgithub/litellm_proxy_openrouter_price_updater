@@ -4,6 +4,8 @@
 
 A CLI tool that compares local OpenRouter model pricing in LiteLLM proxy configuration files with the actual pricing from OpenRouter's API. This helps maintain accurate cost tracking by identifying missing or outdated pricing information.
 
+This script assumes that in your [openrouter preferences](https://openrouter.ai/settings/preferences) you set `Default Provider Sort` to `Price (cheapest first)`.
+
 You might also be interested in my other script: [OpenRouter to Langfuse Model Pricing Sync](https://github.com/thiswillbeyourgithub/openrouter_cost_into_langfuse).
 
 ## Features
