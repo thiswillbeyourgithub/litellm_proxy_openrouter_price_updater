@@ -1,3 +1,12 @@
+# Warning: read this
+As of early october 2025, I noticed a few problematic things with openrouter's pricing API:
+1. The [load balancing](https://openrouter.ai/docs/features/provider-routing) is based on the "cost" of a model but openrouter does not explain how they turn the prompt cost + completion cost + caching cost + image cost into a single "cost" value.
+2. The `throughput` and `latency` are not retuned in the endpoint API call (see `curl https://openrouter.ai/api/v1/models/anthropic/claude-sonnet-4.5/endpoints | jq`).
+That means that I can't have the information needed to know which provider would be used. Similarly, if you use `anthropic/claude-sonnet-4.5:nitro` then your query will go to the highest throughput provider but the API does not provide the means to know which one that would be.
+So yeah, the script works but as long as openrouter does not fix the above it can be imprecise. By just a bit or by a lot depending on how you use openrouter.
+
+I reached out to openrouter about this to see if they're willing to address this. If you happen to be someone of inluence, don't hesitate to reach out!
+
 # LiteLLM Proxy OpenRouter Price Updater
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
