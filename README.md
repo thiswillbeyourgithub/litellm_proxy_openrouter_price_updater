@@ -7,6 +7,8 @@ So yeah, the script works but as long as openrouter does not fix the above it ca
 
 I reached out to openrouter about this to see if they're willing to address this. If you happen to be someone of inluence, don't hesitate to reach out!
 
+Edit: after seeing with the team by emaim they seem to be working on a fix. Will update when they update me.
+
 # LiteLLM Proxy OpenRouter Price Updater
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
