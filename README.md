@@ -1,3 +1,7 @@
+# Warning: read this first:
+
+As litellm [just merged something to always get the pricing from openrouter's usage answer](https://github.com/BerriAI/litellm/issues/13653#event-20238386551) I don't think this project is useful anymore and will archive it.
+
 # Warning: read this
 As of early october 2025, I noticed a few problematic things with openrouter's pricing API:
 1. The [load balancing](https://openrouter.ai/docs/features/provider-routing) is based on the "cost" of a model but openrouter does not explain how they turn the prompt cost + completion cost + caching cost + image cost into a single "cost" value.
