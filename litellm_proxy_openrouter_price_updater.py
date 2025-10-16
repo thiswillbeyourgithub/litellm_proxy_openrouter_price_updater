@@ -111,7 +111,9 @@ def extract_openrouter_models(config: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def compare_pricing(
-    local_model: Dict[str, Any], api_model: Dict[str, Any]
+    local_model: Dict[str, Any],
+    api_model: Dict[str, Any],
+    cache_as_warnings: bool = False,
 ) -> Tuple[List[str], List[str]]:
     """
     Compare local model pricing with API pricing.
@@ -122,6 +124,9 @@ def compare_pricing(
         Local model configuration
     api_model : Dict[str, Any]
         Model data from OpenRouter API
+    cache_as_warnings : bool, optional
+        If True, treat cache-related pricing differences as warnings instead of errors.
+        Default is False.
 
     Returns
     -------
@@ -172,6 +177,13 @@ def compare_pricing(
     # These are not tracked by LiteLLM as of September 2025
     warning_keys = {"web_search"}
 
+    # Cache-related API keys that can optionally be treated as warnings
+    cache_api_keys = {"input_cache_write", "input_cache_read"}
+
+    # If cache_as_warnings is enabled, add cache keys to warning_keys
+    if cache_as_warnings:
+        warning_keys.update(cache_api_keys)
+
     # Check for API pricing keys that have non-zero values but are missing from config
     for api_key, api_value in api_pricing.items():
         if api_value and float(api_value) > 0:
@@ -194,7 +206,9 @@ def compare_pricing(
 
 
 def check_model_pricing(
-    config: Dict[str, Any], api_models: Dict[str, Dict[str, Any]]
+    config: Dict[str, Any],
+    api_models: Dict[str, Dict[str, Any]],
+    cache_as_warnings: bool = False,
 ) -> None:
     """
     Check pricing for all OpenRouter models in config against API data.
@@ -205,6 +219,9 @@ def check_model_pricing(
         Configuration data
     api_models : Dict[str, Dict[str, Any]]
         Model data from OpenRouter API
+    cache_as_warnings : bool, optional
+        If True, treat cache-related pricing differences as warnings instead of errors.
+        Default is False.
     """
     openrouter_models = extract_openrouter_models(config)
 
@@ -238,7 +255,9 @@ def check_model_pricing(
             continue
 
         api_model = api_models[api_model_id]
-        discrepancies, warnings = compare_pricing(model, api_model)
+        discrepancies, warnings = compare_pricing(
+            model, api_model, cache_as_warnings=cache_as_warnings
+        )
 
         has_issues = False
         if discrepancies:
@@ -294,7 +313,13 @@ def check_model_pricing(
     type=click.Path(exists=True),
     help="Path to the YAML configuration file",
 )
-def main(config: str) -> None:
+@click.option(
+    "--cache-as-warnings",
+    is_flag=True,
+    default=False,
+    help="Treat cache-related pricing differences as warnings instead of errors",
+)
+def main(config: str, cache_as_warnings: bool) -> None:
     """
     Update OpenRouter model pricing in LiteLLM proxy configuration.
 
@@ -314,7 +339,9 @@ def main(config: str) -> None:
 
         # Check pricing
         logger.info("Comparing local pricing with API pricing...")
-        check_model_pricing(config_data, api_models)
+        check_model_pricing(
+            config_data, api_models, cache_as_warnings=cache_as_warnings
+        )
 
     except (FileNotFoundError, yaml.YAMLError, requests.RequestException) as e:
         logger.error(f"Error: {e}")
