@@ -56,6 +56,16 @@ pip install -r requirements.txt
 python litellm_proxy_openrouter_price_updater.py --config path/to/your/litellm_config.yaml
 ```
 
+### Command-Line Options
+
+- `--config`: (Required) Path to the YAML configuration file
+- `--cache-as-warnings`: (Optional) Treat cache-related pricing differences (cache creation and cache read costs) as informational warnings instead of errors. This is useful when you want to be notified about cache pricing differences without failing your CI/CD pipeline.
+
+Example with cache warnings:
+```bash
+python litellm_proxy_openrouter_price_updater.py --config path/to/your/litellm_config.yaml --cache-as-warnings
+```
+
 ### Example Output
 
 ```
